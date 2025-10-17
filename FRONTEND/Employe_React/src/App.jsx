@@ -7,7 +7,8 @@ const App = () => {
   const [formData, setFormData] = useState({ id: "", name: "", email: "", department: "" });
   const [editing, setEditing] = useState(false);
 
-  const BASE_URL = "http://localhost:6050";
+  // ✅ Backend Base URL (must include /employeeapi)
+  const BASE_URL = "http://localhost:6050/employeeapi";
 
   useEffect(() => {
     loadEmployees();
@@ -15,8 +16,13 @@ const App = () => {
 
   // Load all employees
   const loadEmployees = async () => {
-    const result = await axios.get(`${BASE_URL}/employees`);
-    setEmployees(result.data);
+    try {
+      const result = await axios.get(`${BASE_URL}/employees`);
+      setEmployees(result.data);
+    } catch (err) {
+      console.error("Error loading employees:", err);
+      alert("Failed to load employees. Check if backend is running.");
+    }
   };
 
   // Handle input change
@@ -24,17 +30,22 @@ const App = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // Add new employee
+  // Add or update employee
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (editing) {
-      await axios.put(`${BASE_URL}/update/${formData.id}`, formData);
-    } else {
-      await axios.post(`${BASE_URL}/add`, formData);
+    try {
+      if (editing) {
+        await axios.put(`${BASE_URL}/update/${formData.id}`, formData);
+      } else {
+        await axios.post(`${BASE_URL}/add`, formData);
+      }
+      setFormData({ id: "", name: "", email: "", department: "" });
+      setEditing(false);
+      loadEmployees();
+    } catch (err) {
+      console.error("Error saving employee:", err);
+      alert("Failed to save employee. Check backend connection.");
     }
-    setFormData({ id: "", name: "", email: "", department: "" });
-    setEditing(false);
-    loadEmployees();
   };
 
   // Edit employee
@@ -45,8 +56,13 @@ const App = () => {
 
   // Delete employee
   const deleteEmployee = async (id) => {
-    await axios.delete(`${BASE_URL}/delete/${id}`);
-    loadEmployees();
+    try {
+      await axios.delete(`${BASE_URL}/delete/${id}`);
+      loadEmployees();
+    } catch (err) {
+      console.error("Error deleting employee:", err);
+      alert("Failed to delete employee.");
+    }
   };
 
   return (
@@ -101,10 +117,17 @@ const App = () => {
       </table>
 
       <hr />
-      <button onClick={async () => {
-        const res = await axios.get(`${BASE_URL}/klu`);
-        alert(res.data);
-      }}>
+      <button
+        onClick={async () => {
+          try {
+            const res = await axios.get(`${BASE_URL}/klu`);
+            alert(res.data);
+          } catch (err) {
+            console.error("Error calling /klu endpoint:", err);
+            alert("Failed to call /klu endpoint.");
+          }
+        }}
+      >
         🔗 Call /klu Endpoint
       </button>
     </div>
